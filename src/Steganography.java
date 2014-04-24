@@ -333,6 +333,23 @@ public class Steganography {
 		out.close();
 	}
 	
+	public static boolean willDataFitInAudio(char audioType, File audio, byte[] data){
+		if(audioType == 'w') {
+			if(data.length > ((audio.length()/2)/8))
+				return false;
+			else
+				return true;
+		}
+		else if(audioType == 'm') {
+			if(data.length > ((audio.length()/2)/8))
+				return false;
+			else
+				return true;
+		}
+		else
+			return false;
+	}
+	
 	public static void printBinary(short data, String caption) {
 		System.out.println(caption + ": " + String.format("%8s", Integer.toBinaryString(data & 0xFFFF)).replace(' ', '0'));
 	}
