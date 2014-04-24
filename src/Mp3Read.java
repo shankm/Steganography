@@ -122,7 +122,7 @@ public class Mp3Read {
     private FileInputStream stream;
     File file;
     int length;
-    ArrayList<byte []> frames = new ArrayList<byte []>();
+    ArrayList<byte[]> frames = new ArrayList<byte []>();
 	
 	final int NUM_OF_FRAMES = 50000; // I have no idea how to calculate how many frames are in a file yet (Surprising lack of info)
 	final int NUM_OF_BYTES_PER_FRAME = 418; // 128kbps: 417, 192kbps: 626  REPLACE LATER WITH CALCULATED VALUE
@@ -135,12 +135,21 @@ public class Mp3Read {
 	
     public Mp3Data readMp3() throws IOException {
 		Mp3Data data = new Mp3Data();
+		byte[] temp;
     	
+		/*
     	for(int i = 0; i < NUM_OF_FRAMES; ++i) {
 			stream.read(soundData[i]);
 		}
+		*/   	
+    	while(stream.available() > 0) {
+			temp = new byte[NUM_OF_BYTES_PER_FRAME];
+    		stream.read(temp);
+    		frames.add(temp);
+		}
     	
-    	data.dataFrames = soundData;
+    	//data.dataFrames = soundData;
+    	data.dataFrames = frames;
     	
     	return data;
     }

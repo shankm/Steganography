@@ -228,8 +228,12 @@ public class Steganography {
 				break;
 			}
 			
+			/*
 			data.dataFrames[frameIndex][byteIndex] = (byte)(nonStegData.dataFrames[frameIndex][byteIndex] & ~(1 << (7 - bitIndex)));
 			data.dataFrames[frameIndex][byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
+			*/
+			data.dataFrames.get(frameIndex)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex)[byteIndex] & ~(1 << (7 - bitIndex)));
+			data.dataFrames.get(frameIndex)[byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
 			
 			if(i % 3 == 2)
 				frameIndex++;
@@ -250,8 +254,18 @@ public class Steganography {
 					break;
 				}
 				
+				/*
 				data.dataFrames[frameIndex][byteIndex] = (byte)(nonStegData.dataFrames[frameIndex][byteIndex] & ~(1 << (7 - bitIndex)));
 				data.dataFrames[frameIndex][byteIndex] |= (1 & (message[i] >>> j)) << (7 - bitIndex);
+				*/
+				try {
+				data.dataFrames.get(frameIndex)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex)[byteIndex] & ~(1 << (7 - bitIndex)));
+				data.dataFrames.get(frameIndex)[byteIndex] |= (1 & (message[i] >>> j)) << (7 - bitIndex);
+				}
+				catch(IndexOutOfBoundsException e) {
+					System.out.println("\nERROR: The data you want to hide is too large for the audio file provided. Please run the program again with less data or a larger audio file.");
+					System.exit(1);
+				}
 				
 				if(j % 3 == 2)
 					frameIndex++;					
@@ -279,8 +293,12 @@ public class Steganography {
 				break;
 			}
 			
+			/*
 			data.dataFrames[frameIndex][byteIndex] = (byte)(nonStegData.dataFrames[frameIndex][byteIndex] & 0xfe);
 			data.dataFrames[frameIndex][byteIndex] |= (1 & (length >>> (7 - bitIndex)));
+			*/
+			data.dataFrames.get(frameIndex)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex)[byteIndex] & 0xfe);
+			data.dataFrames.get(frameIndex)[byteIndex] |= (1 & (length >>> (7 - bitIndex)));
 			
 			if(i % 3 == 2){
 				frameIndex++;
@@ -301,8 +319,12 @@ public class Steganography {
 				break;
 			}
 			
+			/*
 			data.dataFrames[frameIndex][byteIndex] = (byte)(nonStegData.dataFrames[frameIndex][byteIndex] & 0xfe);
 			data.dataFrames[frameIndex][byteIndex] |= (1 & (message[i] >>> (7 - bitIndex)));
+			*/		
+			data.dataFrames.get(frameIndex)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex)[byteIndex] & 0xfe);
+			data.dataFrames.get(frameIndex)[byteIndex] |= (1 & (message[i] >>> (7 - bitIndex)));
 			
 			if(i % 3 == 2){
 				frameIndex++;
@@ -318,8 +340,12 @@ public class Steganography {
 	public static void writeMp3(File file, Mp3Data data) throws IOException {
 		FileOutputStream out = new FileOutputStream(file);
 
+		/*
 		for(int i = 0; i < data.dataFrames.length; ++i)
-			out.write(data.dataFrames[i]);		
+			out.write(data.dataFrames[i]);	
+		*/		
+		for(int i = 0; i < data.dataFrames.size(); ++i)
+			out.write(data.dataFrames.get(i));	
 		
 		out.close();
 	}

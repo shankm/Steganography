@@ -1,4 +1,7 @@
+import java.util.ArrayList;
+
 
 public class Mp3Data {
-	byte[][] dataFrames;
+	//byte[][] dataFrames;
+    ArrayList<byte[]> dataFrames;
 }
