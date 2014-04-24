@@ -150,6 +150,7 @@ public class Mp3Read {
 			/*
 			if(((temp[2] >>> 1) & 1) == 1) {
 				temp = new byte[NUM_OF_BYTES_PER_FRAME + 1];
+				stream.reset();
 				stream.read(temp);
 			}
 			*/
