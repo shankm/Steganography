@@ -136,6 +136,7 @@ public class Mp3Read {
     public Mp3Data readMp3() throws IOException {
 		Mp3Data data = new Mp3Data();
 		byte[] temp;
+		int padding;
     	
 		/*
     	for(int i = 0; i < NUM_OF_FRAMES; ++i) {
@@ -144,7 +145,14 @@ public class Mp3Read {
 		*/   	
     	while(stream.available() > 0) {
 			temp = new byte[NUM_OF_BYTES_PER_FRAME];
-    		stream.read(temp);
+    		stream.mark(1000);
+			stream.read(temp);
+			/*
+			if(((temp[2] >>> 1) & 1) == 1) {
+				temp = new byte[NUM_OF_BYTES_PER_FRAME + 1];
+				stream.read(temp);
+			}
+			*/
     		frames.add(temp);
 		}
     	
