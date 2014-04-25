@@ -214,8 +214,8 @@ public class Steganography {
 		int byteIndex = 2;
 		int bitIndex = 0;
 		
-		// Hide the length of the payload in 32 usable bits of the MP3 (5 in the 1st frame, 5 in the 2nd frame,..., 2 in the 7th frame)
-		for(int i = 0; i < 32; i ++) { //32 is the number of bits in 4 bytes (int)
+		// Hide the length of the payload in 32 usable bits of the MP3 (3 in the 1st frame, 3 in the 2nd frame,..., 2 in the 10th frame)
+		for(int i = 0; i < 32; i++) { //32 is the number of bits in 4 bytes (int)
 			switch(i % 3) {
 			case 0: byteIndex = 2;
 					bitIndex = 7;
@@ -232,8 +232,8 @@ public class Steganography {
 			data.dataFrames[frameIndex][byteIndex] = (byte)(nonStegData.dataFrames[frameIndex][byteIndex] & ~(1 << (7 - bitIndex)));
 			data.dataFrames[frameIndex][byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
 			*/
-			data.dataFrames.get(frameIndex)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex)[byteIndex] & ~(1 << (7 - bitIndex)));
-			data.dataFrames.get(frameIndex)[byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
+			data.dataFrames.get(frameIndex * 2)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex * 2)[byteIndex] & ~(1 << (7 - bitIndex)));
+			data.dataFrames.get(frameIndex * 2)[byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
 			
 			if(i % 3 == 2)
 				frameIndex++;
@@ -259,8 +259,8 @@ public class Steganography {
 				data.dataFrames[frameIndex][byteIndex] |= (1 & (message[i] >>> j)) << (7 - bitIndex);
 				*/
 				try {
-				data.dataFrames.get(frameIndex)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex)[byteIndex] & ~(1 << (7 - bitIndex)));
-				data.dataFrames.get(frameIndex)[byteIndex] |= (1 & (message[i] >>> j)) << (7 - bitIndex);
+				data.dataFrames.get(frameIndex * 2)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex * 2)[byteIndex] & ~(1 << (7 - bitIndex)));
+				data.dataFrames.get(frameIndex * 2)[byteIndex] |= (1 & (message[i] >>> j)) << (7 - bitIndex);
 				}
 				catch(IndexOutOfBoundsException e) {
 					System.out.println("\nERROR: The data you want to hide is too large for the audio file provided. Please run the program again with less data or a larger audio file.");
