@@ -146,7 +146,7 @@ public class Steganography {
 				
 				mp3Data = audioData.readMp3();
 				
-				//deStegMp3(payloadFile, mp3Data);
+				deStegMp3(payloadFile, mp3Data);
 				
 				System.out.println("\n!!! De-steganography SUCCESSFUL !!!");
 			}
@@ -213,10 +213,11 @@ public class Steganography {
 		int frameIndex = 0;
 		int byteIndex = 2;
 		int bitIndex = 0;
+		int counter = 0;
 		
 		// Hide the length of the payload in 32 usable bits of the MP3 (3 in the 1st frame, 3 in the 2nd frame,..., 2 in the 10th frame)
-		for(int i = 0; i < 32; i++) { //32 is the number of bits in 4 bytes (int)
-			switch(i % 3) {
+		for(int i = 0; i < 32; i++, counter++) { //32 is the number of bits in 4 bytes (int)
+			switch(counter % 3) {
 			case 0: byteIndex = 2;
 					bitIndex = 7;
 				break;
@@ -235,14 +236,15 @@ public class Steganography {
 			data.dataFrames.get(frameIndex * 2)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex * 2)[byteIndex] & ~(1 << (7 - bitIndex)));
 			data.dataFrames.get(frameIndex * 2)[byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
 			
-			if(i % 3 == 2)
+			if(counter % 3 == 2)
 				frameIndex++;
 		}
 		
+		
 		// Hide the payload in the audio data
 		for(int i = 0; i < message.length; ++i) {
-			for(int j = 0; j < 8; ++j) {
-				switch(j % 3) {
+			for(int j = 0; j < 8; ++j, counter++) {
+				switch(counter % 3) {
 				case 0: byteIndex = 2;
 						bitIndex = 7;
 					break;
@@ -267,7 +269,7 @@ public class Steganography {
 					System.exit(1);
 				}
 				
-				if(j % 3 == 2)
+				if(counter % 3 == 2)
 					frameIndex++;					
 			}
 		}
@@ -275,66 +277,67 @@ public class Steganography {
 		return data;
 	}
 	
-	public static Mp3Data deStegMp3(byte[] message, Mp3Data nonStegData) {
-		Mp3Data data = nonStegData;
-		int length = message.length;
+	public static void deStegMp3(File file, Mp3Data stegData) throws IOException {
+		Mp3Data data = stegData;
+		FileOutputStream outFile = new FileOutputStream(file);
+		byte temp = 0;
+		
+		int length = 0;
 		int frameIndex = 0;
-		int byteIndex = 0;
+		int byteIndex = 2;
 		int bitIndex = 0;
+		int counter = 0;
 		
-		// Hide the length of the payload in 32 usable bits of the MP3 (5 in the 1st frame, 5 in the 2nd frame,..., 2 in the 7th frame)
-		for(int i = 0; i < 32; i ++) { //32 is the number of bits in 4 bytes (int)
-			switch(i % 3) {
-			case 0: bitIndex = 7;
+		// Extract the length of the payload from the first 32 usable bits of the MP3 (3 in the 1st frame, 3 in the 2nd frame,..., 2 in the 10th frame)
+		for(int i = 0; i < 32; i++, counter++) { //32 is the number of bits in 4 bytes (int)
+			switch(counter % 3) {
+			case 0: byteIndex = 2;
+					bitIndex = 7;
 				break;
-			case 1: bitIndex = 4;
+			case 1: byteIndex = 3;
+					bitIndex = 4;
 				break;
-			case 2: bitIndex = 5;
+			case 2: byteIndex = 3;
+					bitIndex = 5;
 				break;
 			}
-			
 			/*
-			data.dataFrames[frameIndex][byteIndex] = (byte)(nonStegData.dataFrames[frameIndex][byteIndex] & 0xfe);
-			data.dataFrames[frameIndex][byteIndex] |= (1 & (length >>> (7 - bitIndex)));
+			data.dataFrames.get(frameIndex * 2)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex * 2)[byteIndex] & ~(1 << (7 - bitIndex)));
+			data.dataFrames.get(frameIndex * 2)[byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
 			*/
-			data.dataFrames.get(frameIndex)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex)[byteIndex] & 0xfe);
-			data.dataFrames.get(frameIndex)[byteIndex] |= (1 & (length >>> (7 - bitIndex)));
 			
-			if(i % 3 == 2){
+			length |= (1 & (int)(data.dataFrames.get(frameIndex * 2)[byteIndex] >>> (7 - bitIndex))) << i;
+			
+			if(counter % 3 == 2)
 				frameIndex++;
-				byteIndex = 2;
-			}
-			if(byteIndex == 2)
-				byteIndex++;
 		}
 		
-		// Hide the payload in the audio data
-		for(int i = 0; i < message.length; ++i) {
-			switch(i % 3) {
-			case 0: bitIndex = 7;
-				break;
-			case 1: bitIndex = 4;
-				break;
-			case 2: bitIndex = 5;
-				break;
-			}
-			
-			/*
-			data.dataFrames[frameIndex][byteIndex] = (byte)(nonStegData.dataFrames[frameIndex][byteIndex] & 0xfe);
-			data.dataFrames[frameIndex][byteIndex] |= (1 & (message[i] >>> (7 - bitIndex)));
-			*/		
-			data.dataFrames.get(frameIndex)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex)[byteIndex] & 0xfe);
-			data.dataFrames.get(frameIndex)[byteIndex] |= (1 & (message[i] >>> (7 - bitIndex)));
-			
-			if(i % 3 == 2){
-				frameIndex++;
-				byteIndex = 2;
-			}
-			if(byteIndex == 2)
-				byteIndex++;
-		}
+		System.out.println("Payload size = " + length);
 		
-		return data;
+		// Extract the payload from the audio data
+		for(int i = 0; i < length; ++i) {
+			for(int j = 0; j < 8; ++j, counter++) {
+				switch(counter % 3) {
+				case 0: byteIndex = 2;
+						bitIndex = 7;
+					break;
+				case 1: byteIndex = 3;
+						bitIndex = 4;
+					break;
+				case 2: byteIndex = 3;
+						bitIndex = 5;
+					break;
+				}
+				
+				temp |= (1 & (byte)(stegData.dataFrames.get(frameIndex * 2)[byteIndex] >>> (7 - bitIndex))) << i;
+				
+				if(counter % 3 == 2)
+					frameIndex++;	
+			}
+			outFile.write(temp);
+			temp = 0;
+		}
+		outFile.close();
 	}
 	
 	public static void writeMp3(File file, Mp3Data data) throws IOException {

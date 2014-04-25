@@ -124,10 +124,8 @@ public class Mp3Read {
     int length;
     ArrayList<byte[]> frames = new ArrayList<byte []>();
 	
-	final int NUM_OF_FRAMES = 50000; // I have no idea how to calculate how many frames are in a file yet (Surprising lack of info)
 	final int NUM_OF_BYTES_PER_FRAME = 418; // 128kbps: 417, 192kbps: 626  REPLACE LATER WITH CALCULATED VALUE
 	int numOfBytes;
-	byte[][] soundData = new byte[NUM_OF_FRAMES][NUM_OF_BYTES_PER_FRAME];
 	
 	public Mp3Read(File audioFile) throws IOException {	
 		file = audioFile;	
@@ -138,13 +136,12 @@ public class Mp3Read {
 		Mp3Data mp3Data = new Mp3Data();
 		byte[] header;
 		byte[] data;
-		int padding;
     	
 		while(stream.available() > 0) {
 			header = new byte[4];
 			stream.read(header);
 			
-			if(header[0] != 0xff) { //EXPAND ERROR CHECKING
+			if(header[0] != (byte)0xff) { //EXPAND ERROR CHECKING
 				System.out.println("ERROR: Irregular header; bit-counting problem. Audio will probably sound bad.");
 			}
 			
