@@ -126,6 +126,7 @@ public class Mp3Read {
 	
 	final int NUM_OF_FRAMES = 50000; // I have no idea how to calculate how many frames are in a file yet (Surprising lack of info)
 	final int NUM_OF_BYTES_PER_FRAME = 418; // 128kbps: 417, 192kbps: 626  REPLACE LATER WITH CALCULATED VALUE
+	int numOfBytes;
 	byte[][] soundData = new byte[NUM_OF_FRAMES][NUM_OF_BYTES_PER_FRAME];
 	
 	public Mp3Read(File audioFile) throws IOException {	
@@ -134,32 +135,49 @@ public class Mp3Read {
 	}
 	
     public Mp3Data readMp3() throws IOException {
-		Mp3Data data = new Mp3Data();
-		byte[] temp;
+		Mp3Data mp3Data = new Mp3Data();
+		byte[] header;
+		byte[] data;
 		int padding;
     	
-		/*
-    	for(int i = 0; i < NUM_OF_FRAMES; ++i) {
-			stream.read(soundData[i]);
-		}
-		*/   	
-    	while(stream.available() > 0) {
-			temp = new byte[NUM_OF_BYTES_PER_FRAME];
-    		stream.mark(1000);
-			stream.read(temp);
-			/*
-			if(((temp[2] >>> 1) & 1) == 1) {
-				temp = new byte[NUM_OF_BYTES_PER_FRAME + 1];
-				stream.reset();
-				stream.read(temp);
+		while(stream.available() > 0) {
+			header = new byte[4];
+			stream.read(header);
+			
+			if(header[0] != 0xff) { //EXPAND ERROR CHECKING
+				System.out.println("ERROR: Irregular header; bit-counting problem. Audio will probably sound bad.");
 			}
-			*/
-    		frames.add(temp);
+			
+			data = new byte[getFrameSize(header) - 4];
+			stream.read(data);
+			
+			frames.add(header);
+			frames.add(data);
 		}
     	
-    	//data.dataFrames = soundData;
-    	data.dataFrames = frames;
+		mp3Data.dataFrames = frames;
+    	return mp3Data;
+    }
+    
+    public int getFrameSize(byte[] header) {
+    	byte bitRateCode = (byte)(header[2] >>> 4);
+    	int numOfBytes = 0;
+    	int padding = 0;
     	
-    	return data;
+    	switch(bitRateCode) {
+    	case (byte)0xf9: //00001001 - 128 kbps
+    		numOfBytes = 417;
+    		break;
+    	case (byte)0xfb: //00001011 - 192 kbps
+    		numOfBytes = 626;
+    		break;
+    	default:
+    		return -1;
+    	}
+    	
+    	if(((header[2] >>> 1) & 1) == 1)
+			padding = 1;
+    	
+    	return numOfBytes + padding;
     }
 }
