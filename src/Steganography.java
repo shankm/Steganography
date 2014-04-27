@@ -27,20 +27,24 @@ public class Steganography {
 		System.out.println("### \t[x] MP3 (128kbps or 192kbps with/without ID3\n###");
 		System.out.println("### For bug fixes or  requested features/implementations, email mattrshank@gmail.com\n");
 		
+		do {
 		System.out.println("Would you like to perform operations on an MP3 or a WAV?");
 		System.out.print("('m' - MP3, 'w' - WAV): ");
 		temp = in.nextLine();
+		} while(!isValidChoice("type", temp));
 		
-		if(temp.equals("w")) {
+		if(temp.equalsIgnoreCase("w")) {
 			WavRead audioData = null;
 			WavData wavData;
 			WavData stegData;
 			
+			do {
 			System.out.println("Which operation would you like to execute?");
 			System.out.print("('s' - steg, 'd' - desteg): ");
 			temp = in.nextLine();
+			} while(!isValidChoice("operation", temp));
 			
-			if(temp.equals("s")) {
+			if(temp.equalsIgnoreCase("s")) {
 				do {
 				System.out.print("Enter the name of the WAV file you would like to hide the payload in: ");
 				temp = in.nextLine();
@@ -79,7 +83,7 @@ public class Steganography {
 				System.out.println("\n!!! Steganography SUCCESSFUL !!!");
 				System.out.println("The steganographied WAV file can be found at /" + fileNameRoot + "_steg.wav");
 			}
-			else if(temp.equals("d")) {
+			else if(temp.equalsIgnoreCase("d")) {
 				do {
 				System.out.print("Enter the name of the WAV file the payload is hidden in: ");
 				temp = in.nextLine();
@@ -106,16 +110,18 @@ public class Steganography {
 				System.out.println("The extracted data can be found at /" + temp);
 			}
 		}
-		else if(temp.equals("m")) {
+		else if(temp.equalsIgnoreCase("m")) {
 			Mp3Read audioData = null;
 			Mp3Data mp3Data;
 			Mp3Data stegData;
 			
+			do {
 			System.out.println("Which operation would you like to execute?");
 			System.out.print("('s' - steg, 'd' - desteg): ");
 			temp = in.nextLine();
+			} while(!isValidChoice("operation", temp));
 			
-			if(temp.equals("s")) {
+			if(temp.equalsIgnoreCase("s")) {
 				do {
 				System.out.print("Enter the name of the MP3 file you would like to hide the payload in: ");
 				temp = in.nextLine();
@@ -155,7 +161,7 @@ public class Steganography {
 				System.out.println("\n!!! Steganography SUCCESSFUL !!!");
 				System.out.println("The steganographied MP3 file can be found at /" + fileNameRoot + "_steg.mp3");
 			}
-			else if(temp.equals("d")) {
+			else if(temp.equalsIgnoreCase("d")) {
 				do {
 				System.out.print("Enter the name of the MP3 file the payload is hidden in: ");
 				temp = in.nextLine();
@@ -394,11 +400,36 @@ public class Steganography {
 		out.close();
 	}
 	
+	public static boolean isValidChoice(String mode, String ch) { // mode = "type" (file type) or "operation"
+		if(mode.equals("type")) {
+			if(ch.equalsIgnoreCase("m"))
+				return true;
+			else if(ch.equalsIgnoreCase("w"))
+				return true;
+			else {
+				System.out.println("ERROR: You entered an invalid character or string of characters: \"" + ch + "\" is not a valid argument. \n");
+				return false;
+			}
+		}
+		else if(mode.equals("operation")) {
+			if(ch.equalsIgnoreCase("s"))
+				return true;
+			else if(ch.equalsIgnoreCase("d"))
+				return true;
+			else {
+				System.out.println("ERROR: You entered an invalid character or string of characters: \"" + ch + "\" is not a valid argument. \n");
+				return false;
+			}
+		}
+		else
+			return false;
+	}
+	
 	public static boolean isFileType(String extension, String fileName) {
 		if(fileName.substring(fileName.length() - 4, fileName.length()).equalsIgnoreCase(extension))
 			return true;
 		else {
-			System.out.println("ERROR: The file \"" + fileName + "\" does not appear to be a " + extension + " file. Please try again with a " + extension + " file.");
+			System.out.println("ERROR: The file \"" + fileName + "\" does not appear to be a " + extension + " file. Please try again with a " + extension + " file. \n");
 			return false;
 		}
 	}
