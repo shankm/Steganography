@@ -18,6 +18,14 @@ public class Steganography {
 		byte[] message;
 		byte[] compMessage;
 		
+		System.out.println("### Steganography/De-Steganography Tool");
+		System.out.println("### developed by Matt Shank");
+		System.out.println("###");
+		System.out.println("### This steganography tool currently supports:");
+		System.out.println("### \t[x] WAV (16-bit 44.1 kHz stereo)");
+		System.out.println("### \t[x] MP3 (128kbps or 192kbps with/without ID3\n###");
+		System.out.println("### For bug fixes or  requested features/implementations, email mattrshank@gmail.com\n");
+		
 		System.out.println("Would you like to perform operations on an MP3 or a WAV?");
 		System.out.print("('m' - MP3, 'w' - WAV): ");
 		temp = in.nextLine();
@@ -62,6 +70,7 @@ public class Steganography {
 				writeWav(outputFile, stegData);
 				
 				System.out.println("\n!!! Steganography SUCCESSFUL !!!");
+				System.out.println("The steganographied WAV file can be found at /" + fileNameRoot + "_steg.wav");
 			}
 			else if(temp.equals("d")) {
 				System.out.print("Enter the name of the WAV file the payload is hidden in: ");
@@ -84,6 +93,7 @@ public class Steganography {
 				deStegLSB(payloadFile, wavData);
 				
 				System.out.println("\n!!! De-steganography SUCCESSFUL !!!");
+				System.out.println("The extracted data can be found at /" + temp);
 			}
 		}
 		else if(temp.equals("m")) {
@@ -127,6 +137,7 @@ public class Steganography {
 				writeMp3(outputFile, stegData);
 				
 				System.out.println("\n!!! Steganography SUCCESSFUL !!!");
+				System.out.println("The steganographied MP3 file can be found at /" + fileNameRoot + "_steg.mp3");
 			}
 			else if(temp.equals("d")) {
 				System.out.print("Enter the name of the MP3 file the payload is hidden in: ");
@@ -149,6 +160,7 @@ public class Steganography {
 				deStegMp3(payloadFile, mp3Data);
 				
 				System.out.println("\n!!! De-steganography SUCCESSFUL !!!");
+				System.out.println("The extracted data can be found at /" + temp);
 			}
 		}
 	}

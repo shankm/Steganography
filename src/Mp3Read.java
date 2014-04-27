@@ -137,11 +137,13 @@ public class Mp3Read {
 		byte[] header;
 		byte[] data;
 		byte[] buffer;
+		int frameCount = 0;
 		ArrayList<Byte> id3v2 = null;
 		byte[] id3Ident = "ID3".getBytes();
 		byte[] id3Version = null;
 		int id3Length = 0;
 		int shift;
+		int id3Footer = 0;
     	
 		while(stream.available() > 0) {
 			header = new byte[4];
@@ -158,7 +160,7 @@ public class Mp3Read {
 					id3v2.add(b);
 				
 				// Get the ID3v2 major version and revision numbers
-				id3Version[0] = header[4];
+				id3Version[0] = header[3];
 				stream.read(buffer);
 				id3Version[1] = buffer[0];
 				
@@ -166,24 +168,33 @@ public class Mp3Read {
 				for(byte b : buffer)
 					id3v2.add(b);
 				
+				// Determine whether or not the ID3v2 tag has a footer of 10 bytes
+				if((1 & (buffer[1] >>> 4)) == 1)
+					id3Footer = 10;
+				
 				// Get the ID3v2 tag size
+				// 1st shift = 21  (see http://id3.org/id3v2-00 for synchsafe integer explanation)
+				// 2nd shift = 14
+				// 3rd shift = 7
 				for(int i = 0; i < 4; i++) {
-					shift = (4 - 1 - i) * 8;
+					shift = (4 - 1 - i) * 7;
 			        id3Length |= (buffer[i + 2] & 0xff) << shift;
 			    }
 				
 				// Read the rest of the ID3v2 tag based on the calculated ID3v2 tag size
-				buffer = new byte[id3Length];
+				buffer = new byte[id3Length + id3Footer];
 				stream.read(buffer);
 				for(byte b : buffer)
 					id3v2.add(b);
 			}
 			else {
+				frameCount++;
+				
 				if(header[0] != (byte)0xff) { //EXPAND ERROR CHECKING
-					System.out.println("ERROR: Irregular header; bit-counting problem. Audio will probably sound bad.");
+					System.out.println("ERROR: Irregular header at frame #" + frameCount + "; bit-counting problem. Audio will probably sound bad.");
 				}
 				
-				data = new byte[getFrameSize(header) - 4];
+				data = new byte[getFrameSize(header, frameCount) - 4];
 				stream.read(data);
 				
 				frames.add(header);
@@ -201,7 +212,7 @@ public class Mp3Read {
 		return mp3Data;
     }
     
-    public int getFrameSize(byte[] header) {
+    public int getFrameSize(byte[] header, int frameCount) {
     	byte bitRateCode = (byte)(header[2] >>> 4);
     	int numOfBytes = 0;
     	int padding = 0;
@@ -214,7 +225,11 @@ public class Mp3Read {
     		numOfBytes = 626;
     		break;
     	default:
-    		return -1;
+    		System.out.println("ERROR: Bit rate unrecognized or unsupported at MP3 frame #"+frameCount+". "
+    				+ "This could be caused by misaligned pointer (i.e. because of an irregular ID3v2 tag) "
+    				+ "or because you are using an MP3 with an unsupported bit rate. Make sure you are using "
+    				+ "an MP3 with a bit rate of 128kbps or 192kbps.");
+    		System.exit(1);
     	}
     	
     	if(((header[2] >>> 1) & 1) == 1)
