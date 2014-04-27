@@ -17,11 +17,12 @@ public class Steganography {
 		int messageLength;
 		byte[] message;
 		byte[] compMessage;
+		LZW lzw = new LZW();
 		
 		System.out.println("### Steganography/De-Steganography Tool");
 		System.out.println("### developed by Matt Shank");
 		System.out.println("###");
-		System.out.println("### This steganography tool currently supports:");
+		System.out.println("### This steganography tool currently supports hiding .txt files in:");
 		System.out.println("### \t[x] WAV (16-bit 44.1 kHz stereo)");
 		System.out.println("### \t[x] MP3 (128kbps or 192kbps with/without ID3\n###");
 		System.out.println("### For bug fixes or  requested features/implementations, email mattrshank@gmail.com\n");
@@ -40,14 +41,20 @@ public class Steganography {
 			temp = in.nextLine();
 			
 			if(temp.equals("s")) {
+				do {
 				System.out.print("Enter the name of the WAV file you would like to hide the payload in: ");
 				temp = in.nextLine();
+				} while(!isFileType(".wav", temp));
+				
 				fileNameRoot = temp.substring(0, temp.length() - 4);
 				audioFile = new File(temp);
 				outputFile = new File(fileNameRoot + "_steg.wav");
 				
-				System.out.print("Enter the name of the payload file: ");
+				do {
+				System.out.print("Enter the name of the payload file (must be a .txt file): ");
 				temp = in.nextLine();
+				} while(!isFileType(".txt", temp));
+				
 				payloadFile = new File(temp);
 				fileIn = new FileInputStream(payloadFile);
 				
@@ -73,8 +80,11 @@ public class Steganography {
 				System.out.println("The steganographied WAV file can be found at /" + fileNameRoot + "_steg.wav");
 			}
 			else if(temp.equals("d")) {
+				do {
 				System.out.print("Enter the name of the WAV file the payload is hidden in: ");
 				temp = in.nextLine();
+				} while(!isFileType(".wav", temp));
+				
 				audioFile = new File(temp);
 				
 				System.out.print("Enter the name of the file for holding extracted data: ");
@@ -106,14 +116,20 @@ public class Steganography {
 			temp = in.nextLine();
 			
 			if(temp.equals("s")) {
+				do {
 				System.out.print("Enter the name of the MP3 file you would like to hide the payload in: ");
 				temp = in.nextLine();
+				} while(!isFileType(".mp3", temp));
+				
 				fileNameRoot = temp.substring(0, temp.length() - 4);
 				audioFile = new File(temp);
 				outputFile = new File(fileNameRoot + "_steg.mp3");
 				
-				System.out.print("Enter the name of the payload file: ");
+				do {
+				System.out.print("Enter the name of the payload file (must be a .txt file): ");
 				temp = in.nextLine();
+				} while(!isFileType(".txt", temp));
+				
 				payloadFile = new File(temp);
 				fileIn = new FileInputStream(payloadFile);
 				
@@ -140,8 +156,11 @@ public class Steganography {
 				System.out.println("The steganographied MP3 file can be found at /" + fileNameRoot + "_steg.mp3");
 			}
 			else if(temp.equals("d")) {
+				do {
 				System.out.print("Enter the name of the MP3 file the payload is hidden in: ");
 				temp = in.nextLine();
+				} while(!isFileType(".mp3", temp));
+				
 				audioFile = new File(temp);
 				
 				System.out.print("Enter the name of the file for holding extracted data: ");
@@ -373,6 +392,15 @@ public class Steganography {
 		out.write(data.getSoundData());
 		
 		out.close();
+	}
+	
+	public static boolean isFileType(String extension, String fileName) {
+		if(fileName.substring(fileName.length() - 4, fileName.length()).equalsIgnoreCase(extension))
+			return true;
+		else {
+			System.out.println("ERROR: The file \"" + fileName + "\" does not appear to be a " + extension + " file. Please try again with a " + extension + " file.");
+			return false;
+		}
 	}
 	
 	public static boolean willDataFitInAudio(char audioType, File audio, byte[] data){
