@@ -136,24 +136,69 @@ public class Mp3Read {
 		Mp3Data mp3Data = new Mp3Data();
 		byte[] header;
 		byte[] data;
+		byte[] buffer;
+		ArrayList<Byte> id3v2 = null;
+		byte[] id3Ident = "ID3".getBytes();
+		byte[] id3Version = null;
+		int id3Length = 0;
+		int shift;
     	
 		while(stream.available() > 0) {
 			header = new byte[4];
 			stream.read(header);
 			
-			if(header[0] != (byte)0xff) { //EXPAND ERROR CHECKING
-				System.out.println("ERROR: Irregular header; bit-counting problem. Audio will probably sound bad.");
+			// Check for ID3v2 tag
+			if(header[0] == id3Ident[0] && header[1] == id3Ident[1] && header[2] == id3Ident[2]) {
+				id3v2 = new ArrayList<Byte>();
+				id3Version = new byte[2];
+				buffer = new byte[6];
+				
+				// Add bytes in header array to ID3v2 tag ArrayList
+				for(byte b : header)
+					id3v2.add(b);
+				
+				// Get the ID3v2 major version and revision numbers
+				id3Version[0] = header[4];
+				stream.read(buffer);
+				id3Version[1] = buffer[0];
+				
+				// Add bytes in buffer to ID3v2 tag ArrayList
+				for(byte b : buffer)
+					id3v2.add(b);
+				
+				// Get the ID3v2 tag size
+				for(int i = 0; i < 4; i++) {
+					shift = (4 - 1 - i) * 8;
+			        id3Length |= (buffer[i + 2] & 0xff) << shift;
+			    }
+				
+				// Read the rest of the ID3v2 tag based on the calculated ID3v2 tag size
+				buffer = new byte[id3Length];
+				stream.read(buffer);
+				for(byte b : buffer)
+					id3v2.add(b);
 			}
-			
-			data = new byte[getFrameSize(header) - 4];
-			stream.read(data);
-			
-			frames.add(header);
-			frames.add(data);
+			else {
+				if(header[0] != (byte)0xff) { //EXPAND ERROR CHECKING
+					System.out.println("ERROR: Irregular header; bit-counting problem. Audio will probably sound bad.");
+				}
+				
+				data = new byte[getFrameSize(header) - 4];
+				stream.read(data);
+				
+				frames.add(header);
+				frames.add(data);
+			}
 		}
     	
+		if(id3v2 != null) {
+			mp3Data.id3v2 = id3v2;
+			mp3Data.id3Version = id3Version;
+		}
+		
 		mp3Data.dataFrames = frames;
-    	return mp3Data;
+    	
+		return mp3Data;
     }
     
     public int getFrameSize(byte[] header) {

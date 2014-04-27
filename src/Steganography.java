@@ -343,10 +343,11 @@ public class Steganography {
 	public static void writeMp3(File file, Mp3Data data) throws IOException {
 		FileOutputStream out = new FileOutputStream(file);
 
-		/*
-		for(int i = 0; i < data.dataFrames.length; ++i)
-			out.write(data.dataFrames[i]);	
-		*/		
+		if(data.id3v2 != null) {
+			for(int i = 0; i < data.id3v2.size(); ++i)
+				out.write(data.id3v2.get(i));
+		}
+		
 		for(int i = 0; i < data.dataFrames.size(); ++i)
 			out.write(data.dataFrames.get(i));	
 		
