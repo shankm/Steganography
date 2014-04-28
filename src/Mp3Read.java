@@ -129,7 +129,7 @@ public class Mp3Read {
 	
 	public Mp3Read(File audioFile) throws IOException {	
 		file = audioFile;	
-		stream = new FileInputStream(file);  	
+		stream = new FileInputStream(file);
 	}
 	
     public Mp3Data readMp3() throws IOException {
@@ -139,7 +139,6 @@ public class Mp3Read {
 		byte[] buffer;
 		int frameCount = 0;
 		ArrayList<Byte> id3v2 = null;
-		byte[] id3Ident = "ID3".getBytes();
 		byte[] id3Version = null;
 		int id3Length = 0;
 		int shift;
@@ -150,7 +149,7 @@ public class Mp3Read {
 			stream.read(header);
 			
 			// Check for ID3v2 tag
-			if(header[0] == id3Ident[0] && header[1] == id3Ident[1] && header[2] == id3Ident[2]) {
+			if(header[0] == 'I' && header[1] == 'D' && header[2] == '3') {
 				id3v2 = new ArrayList<Byte>();
 				id3Version = new byte[2];
 				buffer = new byte[6];
