@@ -137,8 +137,6 @@ public class Mp3Read {
 		byte[] data;
 		byte[] buffer;
 		int frameCount = 0;
-		int frameSize = 0;
-		boolean padding;
 		ArrayList<Byte> id3v2 = null;
 		byte[] id3Version = null;
 		int id3Length = 0;
@@ -194,24 +192,8 @@ public class Mp3Read {
 					System.out.println("ERROR: Irregular header at frame #" + frameCount + "; bit-counting problem. Audio will probably sound bad.");
 				}
 				
-//				data = new byte[getFrameSize(header, frameCount) - 4];
-//				stream.read(data);
-				
-				frameSize = getFrameSize(header, frameCount);
-				data = new byte[frameSize - 4];
-				
-				for(int i = 0; i < frameSize - 4 - 1; ++i) {
-					data[i] = (byte)stream.read();
-				}
-				
-				if(paddingIsSet(header))
-					data[frameSize - 4 - 1] = (byte)(stream.read() & 0);
-				else {
-					data[frameSize - 4 - 1] = (byte)0;
-					
-					// Set the padding bit
-					header[2] |= 2;
-				}
+				data = new byte[getFrameSize(header, frameCount) - 4];
+				stream.read(data);
 				
 				frames.add(header);
 				frames.add(data);
@@ -259,7 +241,7 @@ public class Mp3Read {
     	// FrameSize = Bitrate * 1000/8 * SamplesPerFrame / Frequency + IsPadding * PaddingSize
     	numOfBytes = bitRate * 1000/8 * 1152 / frequency;
     	
-    	//if(((header[2] >>> 1) & 1) == 1)
+    	if(((header[2] >>> 1) & 1) == 1)
 			padding = 1;
     	
     	return numOfBytes + padding;
@@ -316,8 +298,7 @@ public class Mp3Read {
     	default:
     		System.out.println("FATAL ERROR: Bit rate unrecognized or unsupported at MP3 frame #"+frameCount+". "
     				+ "This could be caused by misaligned pointer (i.e. because of an irregular ID3v2 tag) "
-    				+ "or because you are using an MP3 with an unsupported bit rate. Make sure you are using "
-    				+ "an MP3 with a bit rate of 128kbps or 192kbps.");
+    				+ "or because you are using an MP3 with an unsupported bit rate.");
     		System.exit(1);
     	}
     	
