@@ -1,8 +1,9 @@
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class Steganography {
@@ -18,7 +19,8 @@ public class Steganography {
 		byte[] message;
 		byte[] compMessage;
 		boolean test = true;
-		LZW lzw = new LZW();
+		String txtFileAsString;
+		List<Integer> compressedMsg;
 		
 		System.out.println("### Steganography/De-Steganography Tool");
 		System.out.println("### developed by Matt Shank");
@@ -83,6 +85,15 @@ public class Steganography {
 				message = new byte[messageLength];
 				fileIn.read(message);
 				fileIn.close();
+				
+				System.out.println(messageLength);
+				
+				// Convert byte[] to String in order to apply LZW
+				txtFileAsString = new String(message);
+				
+				// Compress the String with LZW compression
+				compressedMsg = LZW.compress(txtFileAsString);
+				System.out.println(convertIntegerListToByteArray(compressedMsg).length);
 				
 				wavData = audioData.readWav();
 				
@@ -287,12 +298,14 @@ public class Steganography {
 				break;
 			}
 			
-			/*
-			data.dataFrames[frameIndex][byteIndex] = (byte)(nonStegData.dataFrames[frameIndex][byteIndex] & ~(1 << (7 - bitIndex)));
-			data.dataFrames[frameIndex][byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
-			*/
-			data.dataFrames.get(frameIndex * 2)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex * 2)[byteIndex] & ~(1 << (7 - bitIndex)));
-			data.dataFrames.get(frameIndex * 2)[byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
+			try {
+				data.dataFrames.get(frameIndex * 2)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex * 2)[byteIndex] & ~(1 << (7 - bitIndex)));
+				data.dataFrames.get(frameIndex * 2)[byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
+			}
+			catch(IndexOutOfBoundsException e) {
+				System.out.println("\nERROR: The data you want to hide is too large for the audio file provided. Please run the program again with less data or a larger audio file.");
+				System.exit(1);
+			}
 			
 			if(counter % 3 == 2)
 				frameIndex++;
@@ -314,10 +327,6 @@ public class Steganography {
 					break;
 				}
 				
-				/*
-				data.dataFrames[frameIndex][byteIndex] = (byte)(nonStegData.dataFrames[frameIndex][byteIndex] & ~(1 << (7 - bitIndex)));
-				data.dataFrames[frameIndex][byteIndex] |= (1 & (message[i] >>> j)) << (7 - bitIndex);
-				*/
 				try {
 				data.dataFrames.get(frameIndex * 2)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex * 2)[byteIndex] & ~(1 << (7 - bitIndex)));
 				data.dataFrames.get(frameIndex * 2)[byteIndex] |= (1 & (message[i] >>> j)) << (7 - bitIndex);
@@ -453,6 +462,31 @@ public class Steganography {
 			System.out.println("ERROR: The file \"" + fileName + "\" does not appear to be a " + extension + " file. Please try again with a " + extension + " file. \n");
 			return false;
 		}
+	}
+	
+	public static byte[] convertIntegerListToByteArray(List<Integer> list) {
+		byte[] converted = new byte[list.size() * 4]; // Number of integers in 'list' multiplied by 4 because each integer is 4 bytes
+		int temp;
+		
+		for(int i = 0; i < list.size(); ++i) {
+			temp = list.get(i);
+			for(int j = 0; j < 4; ++j) {
+				converted[i * 4 + j] = (byte)(0xff & (temp >>> (4 - 1 - j)));
+			}
+		}
+		
+		return converted;
+	}
+	
+	public static List<Integer> convertByteArrayToIntegerList(byte[] bytes) {
+		List<Integer> converted = new ArrayList<Integer>();
+		int temp = 0;
+		
+		for(int i = 0; i < bytes.length; ++i) {
+			
+		}
+		
+		return converted;
 	}
 	
 	public static boolean willDataFitInAudio(char audioType, File audio, byte[] data){
