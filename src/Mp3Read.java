@@ -213,27 +213,97 @@ public class Mp3Read {
     
     public int getFrameSize(byte[] header, int frameCount) {
     	byte bitRateCode = (byte)(header[2] >>> 4);
+    	byte frequencyCode = (byte)(3 & header[2] >>> 2);
+    	int bitRate = 0;
+    	int frequency = 0;
     	int numOfBytes = 0;
     	int padding = 0;
     	
-    	switch(bitRateCode) {
-    	case (byte)0xf9: //00001001 - 128 kbps
-    		numOfBytes = 417;
+    	bitRate = getBitRate(bitRateCode, frameCount);
+    	
+    	switch(frequencyCode) {
+    	case (byte)0:
+    		frequency = 44100;
     		break;
-    	case (byte)0xfb: //00001011 - 192 kbps
-    		numOfBytes = 626;
+    	case (byte)1:
+    		frequency = 48000;
+    		break;
+    	case (byte)2:
+    		frequency = 32000;
     		break;
     	default:
-    		System.out.println("ERROR: Bit rate unrecognized or unsupported at MP3 frame #"+frameCount+". "
+    		System.out.println("FATAL ERROR: Sampling rate frequency unrecognized or unsupported at MP3 frame #"+frameCount+". "
+    				+ "This could be caused by misaligned pointer (i.e. because of an irregular ID3v2 tag) "
+    				+ "or because you are using a corrupted MP3");
+    		System.exit(1);
+    	}
+    	
+    	// Calculate frame size
+    	// FrameSize = Bitrate * 1000/8 * SamplesPerFrame / Frequency + IsPadding * PaddingSize
+    	numOfBytes = bitRate * 1000/8 * 1152 / frequency;
+    	
+    	if(((header[2] >>> 1) & 1) == 1)
+			padding = 1;
+    	
+    	return numOfBytes + padding;
+    }
+    
+    public int getBitRate(byte code, int frameCount) {
+    	int bitRate = 0;
+    	
+    	byte comp = (byte)(code & 0xf);
+    	
+    	switch(comp) {
+    	case (byte)0x1:
+    		bitRate = 32;
+    		break;
+    	case (byte)0x2:
+    		bitRate = 40;
+    		break;
+    	case (byte)0x3:
+    		bitRate = 48;
+    		break;
+    	case (byte)0x4:
+    		bitRate = 56;
+    		break;
+    	case (byte)0x5:
+    		bitRate = 64;
+    		break;
+    	case (byte)0x6:
+    		bitRate = 80;
+    		break;
+    	case (byte)0x7:
+    		bitRate = 96;
+    		break;
+    	case (byte)0x8:
+    		bitRate = 112;
+    		break;
+    	case (byte)0x9:
+    		bitRate = 128;
+    		break;
+    	case (byte)0xa:
+    		bitRate = 160;
+    		break;
+    	case (byte)0xb:
+    		bitRate = 192;
+    		break;
+    	case (byte)0xc:
+    		bitRate = 224;
+    		break;
+    	case (byte)0xd:
+    		bitRate = 256;
+    		break;
+    	case (byte)0xe:
+    		bitRate = 320;
+    		break;
+    	default:
+    		System.out.println("FATAL ERROR: Bit rate unrecognized or unsupported at MP3 frame #"+frameCount+". "
     				+ "This could be caused by misaligned pointer (i.e. because of an irregular ID3v2 tag) "
     				+ "or because you are using an MP3 with an unsupported bit rate. Make sure you are using "
     				+ "an MP3 with a bit rate of 128kbps or 192kbps.");
     		System.exit(1);
     	}
     	
-    	if(((header[2] >>> 1) & 1) == 1)
-			padding = 1;
-    	
-    	return numOfBytes + padding;
+    	return bitRate;
     }
 }

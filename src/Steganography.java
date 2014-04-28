@@ -17,10 +17,12 @@ public class Steganography {
 		String fileNameRoot;
 		int messageLength;
 		byte[] message;
-		byte[] compMessage;
 		boolean test = true;
+		boolean lzw;
 		String txtFileAsString;
-		List<Integer> compressedMsg;
+		List<Integer> compressedMsgList;
+		byte[] compressedMsgBytes;
+		
 		
 		System.out.println("### Steganography/De-Steganography Tool");
 		System.out.println("### developed by Matt Shank");
@@ -86,23 +88,19 @@ public class Steganography {
 				fileIn.read(message);
 				fileIn.close();
 				
-				System.out.println(messageLength);
-				
-				// Convert byte[] to String in order to apply LZW
-				txtFileAsString = new String(message);
-				
-				// Compress the String with LZW compression
-				compressedMsg = LZW.compress(txtFileAsString);
-				System.out.println(convertIntegerListToByteArray(compressedMsg).length);
-				
 				wavData = audioData.readWav();
 				
-				stegData = stegLSB(message, wavData);
-				
-				writeWav(outputFile, stegData);
+				try {
+					stegData = stegLSB(message, wavData);
+					writeWav(outputFile, stegData);
+				}
+				catch(ArrayIndexOutOfBoundsException e) {
+					System.out.println("\nFATAL ERROR: The data you want to hide is too large for the audio file provided. Please run the program again with less data or a larger audio file.");
+					System.exit(1);
+				}
 				
 				System.out.println("\n!!! Steganography SUCCESSFUL !!!");
-				System.out.println("The steganographied WAV file can be found at /" + fileNameRoot + "_steg.wav");
+				System.out.println("The steganographied WAV file can be found at " + System.getProperty("user.dir") + "/" + fileNameRoot + "_steg.wav");
 			}
 			else if(temp.equalsIgnoreCase("d")) {
 				do {
@@ -129,7 +127,7 @@ public class Steganography {
 				deStegLSB(payloadFile, wavData);
 				
 				System.out.println("\n!!! De-steganography SUCCESSFUL !!!");
-				System.out.println("The extracted data can be found at /" + temp);
+				System.out.println("The extracted data can be found at " + System.getProperty("user.dir") + "/" + temp);
 			}
 		}
 		else if(temp.equalsIgnoreCase("m")) {
@@ -182,15 +180,28 @@ public class Steganography {
 				fileIn.read(message);
 				fileIn.close();
 				
+				// Convert byte[] to String in order to apply LZW
+				txtFileAsString = new String(message);
+				
+				// Compress the String with LZW compression
+				compressedMsgList = LZW.compress(txtFileAsString);
+				
+				compressedMsgBytes = convertIntegerListToByteArray(compressedMsgList);
+				
+				// Compare LZW compression length to uncompressed length
+				if(compressedMsgBytes.length < messageLength)
+					lzw = true;
+				else
+					lzw = false;
+				
 				mp3Data = audioData.readMp3();
 				
-				stegData = stegMp3(message, mp3Data);
-				//stegData = mp3Data;
+				stegData = stegMp3(message, mp3Data, lzw);
 				
 				writeMp3(outputFile, stegData);
 				
 				System.out.println("\n!!! Steganography SUCCESSFUL !!!");
-				System.out.println("The steganographied MP3 file can be found at /" + fileNameRoot + "_steg.mp3");
+				System.out.println("The steganographied MP3 file can be found at " + System.getProperty("user.dir") + "/" + fileNameRoot + "_steg.mp3");
 			}
 			else if(temp.equalsIgnoreCase("d")) {
 				do {
@@ -217,7 +228,7 @@ public class Steganography {
 				deStegMp3(payloadFile, mp3Data);
 				
 				System.out.println("\n!!! De-steganography SUCCESSFUL !!!");
-				System.out.println("The extracted data can be found at /" + temp);
+				System.out.println("The extracted data can be found at " + System.getProperty("user.dir") + "/" + temp);
 			}
 		}
 	}
@@ -276,7 +287,7 @@ public class Steganography {
 	}
 	
 	// Post-encoding header steganography with 128kbps MP3s with constant bit-rate
-	public static Mp3Data stegMp3(byte[] message, Mp3Data nonStegData) {
+	public static Mp3Data stegMp3(byte[] message, Mp3Data nonStegData, boolean lzw) {
 		Mp3Data data = nonStegData;
 		int length = message.length;
 		int frameIndex = 0;
@@ -284,8 +295,8 @@ public class Steganography {
 		int bitIndex = 0;
 		int counter = 0;
 		
-		// Hide the length of the payload in 32 usable bits of the MP3 (3 in the 1st frame, 3 in the 2nd frame,..., 2 in the 10th frame)
-		for(int i = 0; i < 32; i++, counter++) { //32 is the number of bits in 4 bytes (int)
+		// Hide the length of the payload in 32 usable bits of the MP3 (3 in the 1st frame, 3 in the 2nd frame,..., 2 in the 10th frame) and a flag that, if set, means LZW compression was used
+		for(int i = 0; i < 33; i++, ++counter) { //32 is the number of bits in 4 bytes (int)
 			switch(counter % 3) {
 			case 0: byteIndex = 2;
 					bitIndex = 7;
@@ -298,23 +309,29 @@ public class Steganography {
 				break;
 			}
 			
-			try {
-				data.dataFrames.get(frameIndex * 2)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex * 2)[byteIndex] & ~(1 << (7 - bitIndex)));
-				data.dataFrames.get(frameIndex * 2)[byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
+			if(i < 32) {
+				try {
+					data.dataFrames.get(frameIndex * 2)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex * 2)[byteIndex] & ~(1 << (7 - bitIndex)));
+					data.dataFrames.get(frameIndex * 2)[byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
+				}
+				catch(IndexOutOfBoundsException e) {
+					System.out.println("\nFATAL ERROR: The data you want to hide is too large for the audio file provided. Please run the program again with less data or a larger audio file.");
+					System.exit(1);
+				}
 			}
-			catch(IndexOutOfBoundsException e) {
-				System.out.println("\nERROR: The data you want to hide is too large for the audio file provided. Please run the program again with less data or a larger audio file.");
-				System.exit(1);
+			else {
+				data.dataFrames.get(frameIndex * 2)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex * 2)[byteIndex] & ~(1 << (7 - bitIndex))); // Sets LZW flag to 0
+				if(lzw)
+					data.dataFrames.get(frameIndex * 2)[byteIndex] |= 1 << (7 - bitIndex); // Sets LZW flag to 1 if LZW compression was used
 			}
 			
 			if(counter % 3 == 2)
 				frameIndex++;
 		}
 		
-		
 		// Hide the payload in the audio data
 		for(int i = 0; i < message.length; ++i) {
-			for(int j = 0; j < 8; ++j, counter++) {
+			for(int j = 0; j < 8; ++j, ++counter) {
 				switch(counter % 3) {
 				case 0: byteIndex = 2;
 						bitIndex = 7;
@@ -348,15 +365,17 @@ public class Steganography {
 		Mp3Data data = stegData;
 		FileOutputStream outFile = new FileOutputStream(file);
 		byte temp = 0;
+		byte[] message;
 		
 		int length = 0;
 		int frameIndex = 0;
 		int byteIndex = 2;
 		int bitIndex = 0;
 		int counter = 0;
+		boolean lzw = false;
 		
-		// Extract the length of the payload from the first 32 usable bits of the MP3 (3 in the 1st frame, 3 in the 2nd frame,..., 2 in the 10th frame)
-		for(int i = 0; i < 32; i++, counter++) { //32 is the number of bits in 4 bytes (int)
+		// Extract the length of the payload from the first 32 usable bits of the MP3 (3 in the 1st frame, 3 in the 2nd frame,..., 2 in the 10th frame) and the status of the LZW flag
+		for(int i = 0; i < 33; ++i, ++counter) { //32 is the number of bits in 4 bytes (int)
 			switch(counter % 3) {
 			case 0: byteIndex = 2;
 					bitIndex = 7;
@@ -368,22 +387,23 @@ public class Steganography {
 					bitIndex = 5;
 				break;
 			}
-			/*
-			data.dataFrames.get(frameIndex * 2)[byteIndex] = (byte)(nonStegData.dataFrames.get(frameIndex * 2)[byteIndex] & ~(1 << (7 - bitIndex)));
-			data.dataFrames.get(frameIndex * 2)[byteIndex] |= (1 & (length >>> i)) << (7 - bitIndex);
-			*/
 			
-			length |= (1 & (int)(data.dataFrames.get(frameIndex * 2)[byteIndex] >>> (7 - bitIndex))) << i;
+			if(i < 32)
+				length |= (1 & (int)(data.dataFrames.get(frameIndex * 2)[byteIndex] >>> (7 - bitIndex))) << i;
+			else {
+				if((1 & (int)(data.dataFrames.get(frameIndex * 2)[byteIndex] >>> (7 - bitIndex))) == 1)
+					lzw = true;
+			}
 			
 			if(counter % 3 == 2)
 				frameIndex++;
 		}
-		
-		System.out.println("Payload size = " + length);
+
+		message = new byte[length];
 		
 		// Extract the payload from the audio data
 		for(int i = 0; i < length; ++i) {
-			for(int j = 0; j < 8; ++j, counter++) {
+			for(int j = 0; j < 8; ++j, ++counter) {
 				switch(counter % 3) {
 				case 0: byteIndex = 2;
 						bitIndex = 7;
@@ -396,14 +416,18 @@ public class Steganography {
 					break;
 				}
 				
-				temp |= (1 & (byte)(stegData.dataFrames.get(frameIndex * 2)[byteIndex] >>> (7 - bitIndex))) << i;
+				temp |= (1 & (byte)(stegData.dataFrames.get(frameIndex * 2)[byteIndex] >>> (7 - bitIndex))) << j;
 				
 				if(counter % 3 == 2)
 					frameIndex++;	
 			}
-			outFile.write(temp);
+			message[i] = temp;
 			temp = 0;
 		}
+		if(lzw)
+			outFile.write(LZW.decompress(convertByteArrayToIntegerList(message)).getBytes());
+		else
+			outFile.write(message);
 		outFile.close();
 	}
 	
@@ -482,8 +506,11 @@ public class Steganography {
 		List<Integer> converted = new ArrayList<Integer>();
 		int temp = 0;
 		
-		for(int i = 0; i < bytes.length; ++i) {
-			
+		for(int i = 0; i < (bytes.length / 4); ++i) {
+			for(int j = 0; j < 4; ++j) {
+				temp |= (int)bytes[i * 4 + j] << (8 * (4 - 1 - j));
+			}
+			converted.add(temp);
 		}
 		
 		return converted;
