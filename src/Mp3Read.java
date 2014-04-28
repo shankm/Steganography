@@ -124,7 +124,6 @@ public class Mp3Read {
     int length;
     ArrayList<byte[]> frames = new ArrayList<byte []>();
 	
-	final int NUM_OF_BYTES_PER_FRAME = 418; // 128kbps: 417, 192kbps: 626  REPLACE LATER WITH CALCULATED VALUE
 	int numOfBytes;
 	
 	public Mp3Read(File audioFile) throws IOException {	
@@ -138,6 +137,8 @@ public class Mp3Read {
 		byte[] data;
 		byte[] buffer;
 		int frameCount = 0;
+		int frameSize = 0;
+		boolean padding;
 		ArrayList<Byte> id3v2 = null;
 		byte[] id3Version = null;
 		int id3Length = 0;
@@ -193,8 +194,24 @@ public class Mp3Read {
 					System.out.println("ERROR: Irregular header at frame #" + frameCount + "; bit-counting problem. Audio will probably sound bad.");
 				}
 				
-				data = new byte[getFrameSize(header, frameCount) - 4];
-				stream.read(data);
+//				data = new byte[getFrameSize(header, frameCount) - 4];
+//				stream.read(data);
+				
+				frameSize = getFrameSize(header, frameCount);
+				data = new byte[frameSize - 4];
+				
+				for(int i = 0; i < frameSize - 4 - 1; ++i) {
+					data[i] = (byte)stream.read();
+				}
+				
+				if(paddingIsSet(header))
+					data[frameSize - 4 - 1] = (byte)(stream.read() & 0);
+				else {
+					data[frameSize - 4 - 1] = (byte)0;
+					
+					// Set the padding bit
+					header[2] |= 2;
+				}
 				
 				frames.add(header);
 				frames.add(data);
@@ -242,7 +259,7 @@ public class Mp3Read {
     	// FrameSize = Bitrate * 1000/8 * SamplesPerFrame / Frequency + IsPadding * PaddingSize
     	numOfBytes = bitRate * 1000/8 * 1152 / frequency;
     	
-    	if(((header[2] >>> 1) & 1) == 1)
+    	//if(((header[2] >>> 1) & 1) == 1)
 			padding = 1;
     	
     	return numOfBytes + padding;
@@ -305,5 +322,14 @@ public class Mp3Read {
     	}
     	
     	return bitRate;
+    }
+    
+    public boolean paddingIsSet(byte[] header) {
+    	byte temp = (byte)(1 & (header[2] >>> 1));
+    	
+    	if(temp == 1)
+    		return true;
+    	else
+    		return false;
     }
 }

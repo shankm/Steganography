@@ -29,7 +29,7 @@ public class Steganography {
 		System.out.println("###");
 		System.out.println("### This steganography tool currently supports hiding .txt files in:");
 		System.out.println("### \t[x] WAV (16-bit 44.1 kHz stereo)");
-		System.out.println("### \t[x] MP3 (128kbps or 192kbps with/without ID3\n###");
+		System.out.println("### \t[x] MP3 (with/without ID3\n###");
 		System.out.println("### For bug fixes or requested features/implementations, email mattrshank@gmail.com\n");
 		
 		do {
