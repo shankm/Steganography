@@ -196,7 +196,9 @@ public class Steganography {
 				
 				mp3Data = audioData.readMp3();
 				
-				stegData = stegMp3(message, mp3Data, lzw);
+				
+				stegData = stegMp3(message, mp3Data, false);
+				
 				
 				writeMp3(outputFile, stegData);
 				
